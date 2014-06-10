@@ -1,0 +1,31 @@
+apply plugin: 'android-library'
+
+android {
+    compileSdkVersion 19
+    buildToolsVersion "19.1.0"
+
+    defaultConfig {
+        minSdkVersion 8
+        targetSdkVersion 19
+    }
+
+    sourceSets {
+        main {
+            manifest {
+                srcFile "main/AndroidManifest.xml"
+            }
+            java {
+                srcDir "main/src"
+            }
+            res {
+                srcDir "main/res"
+            }
+        }
+    }
+}
+
+task jar(type: Jar) {
+    dependsOn assembleRelease
+    baseName "MaskedImageView"
+    from fileTree(dir: "build/classes/release")
+}
