@@ -1,0 +1,21 @@
+# Gradle
+local.properties
+gradle.properties
+.gradle
+build
+
+# IntelliJ
+*.iml
+.idea
+bin
+gen
+out
+project.properties
+
+# Android
+keystore.properties
+*.keystore
+
+# Generic
+libs
+.DS_Store
