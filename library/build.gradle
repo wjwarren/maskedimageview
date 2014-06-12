@@ -27,5 +27,5 @@ android {
 task jar(type: Jar) {
     dependsOn assembleRelease
     baseName "MaskedImageView"
-    from fileTree(dir: "build/classes/release")
+    from fileTree(dir: "build/intermediates/classes/release")
 }
