@@ -13,6 +13,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.util.AttributeSet;
+import android.view.InflateException;
 import android.view.View;
 import android.widget.ImageView;
 import nl.ansuz.android.maskedimageview.R;
@@ -86,7 +87,6 @@ public class MaskedImageView extends ImageView {
 
         if (attributes != null) {
             parseAttributes(attributes);
-            loadMask();
         }
     }
 
@@ -103,6 +103,7 @@ public class MaskedImageView extends ImageView {
      * @param attributes
      */
     private void parseAttributes(AttributeSet attributes) {
+        mMaskResourceId = -1;
         TypedArray array = getContext().getTheme().obtainStyledAttributes(
                 attributes,
                 R.styleable.MaskedImageView,
@@ -113,16 +114,16 @@ public class MaskedImageView extends ImageView {
         } finally {
             array.recycle();
         }
+
+        if (mMaskResourceId < 0) {
+            throw new InflateException("Mandatory 'mask' attribute not set!");
+        }
     }
 
     /**
      * Loads the image mask.
      */
     private void loadMask() {
-        if (mMaskResourceId < 0) {
-            return;
-        }
-
         Drawable drawable = getResources().getDrawable(mMaskResourceId);
         mMask = drawableToBitmap(drawable);
     }
@@ -132,7 +133,7 @@ public class MaskedImageView extends ImageView {
      * @param drawable {@link Drawable} - The {@link Drawable} to convert.
      * @return {@link Bitmap} - The resulting {@link Bitmap}.
      */
-    private Bitmap drawableToBitmap (Drawable drawable) {
+    private Bitmap drawableToBitmap(Drawable drawable) {
         if (drawable == null) {
             return null;
         }
@@ -141,8 +142,15 @@ public class MaskedImageView extends ImageView {
             return ((BitmapDrawable)drawable).getBitmap();
         }
 
-        Bitmap bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight(),
-                Bitmap.Config.ARGB_8888);
+        int bitmapWidth = drawable.getIntrinsicWidth();
+        int bitmapHeight = drawable.getIntrinsicHeight();
+        if (bitmapWidth <= 0 || bitmapHeight <= 0) {
+            // The mask may not have a width/height set, use the same as the image.
+            bitmapWidth = getWidth();
+            bitmapHeight = getHeight();
+        }
+
+        Bitmap bitmap = Bitmap.createBitmap(bitmapWidth, bitmapHeight, Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bitmap);
         canvas.drawARGB(0, 0, 0, 0);
         drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
@@ -163,10 +171,14 @@ public class MaskedImageView extends ImageView {
     protected void onDraw(Canvas canvas) {
         Bitmap sourceBitmap = drawableToBitmap(getDrawable());
 
-        if (sourceBitmap == null || getWidth() <= 0 || getHeight() <= 0 || mMask == null) {
+        if (sourceBitmap == null || getWidth() <= 0 || getHeight() <= 0) {
             // Bail out early when there is nothing to do.
             super.onDraw(canvas);
             return;
+        }
+
+        if (mMask == null) {
+            loadMask();
         }
 
         Bitmap output;
