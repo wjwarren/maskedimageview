@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">MaskedImageView Example</string>
+    <string name="header_original">Original Image</string>
+    <string name="header_circle">Circular Mask (Shape)</string>
+    <string name="header_rectangle">Rectangular Mask (Shape)</string>
+    <string name="header_camera">Camera Mask (PNG)</string>
 </resources>
