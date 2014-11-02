@@ -26,6 +26,20 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             style="@style/header_text"
+            android:text="Circular Mask - Outline" />
+
+        <ImageView android:id="@+id/iv_outline_test"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:layout_marginTop="4dp"
+            android:src="@drawable/test"
+            android:scaleType="matrix"
+            android:background="@drawable/round_mask" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            style="@style/header_text"
             android:text="@string/header_circle" />
 
         <nl.ansuz.android.maskedimageview.widget.MaskedImageView
