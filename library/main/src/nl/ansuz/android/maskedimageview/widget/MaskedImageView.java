@@ -1,5 +1,6 @@
 package nl.ansuz.android.maskedimageview.widget;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
@@ -11,27 +12,31 @@ import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
 import android.util.AttributeSet;
 import android.view.InflateException;
 import android.view.View;
+import android.view.ViewOutlineProvider;
 import android.widget.ImageView;
 import nl.ansuz.android.maskedimageview.R;
 
 /**
  * An {@link ImageView} that can have a mask applied to it.
- *
  * @author wijnand
  */
 public class MaskedImageView extends ImageView {
 
     protected int mMaskResourceId;
+    protected Drawable mMaskDrawable;
     protected Bitmap mMask;
 
     protected BitmapFactory.Options mSourceOptions;
 
     protected Paint mSourcePaint;
     protected Paint mMaskPaint;
+
+    protected boolean mIsOutlineCompatible;
 
     /**
      * @see ImageView#ImageView(Context)
@@ -66,6 +71,39 @@ public class MaskedImageView extends ImageView {
      * @param attributes {@link AttributeSet} - Layout attributes.
      */
     private void init(AttributeSet attributes) {
+        if (attributes != null) {
+            parseAttributes(attributes);
+        }
+
+        mMaskDrawable = getResources().getDrawable(mMaskResourceId);
+        mIsOutlineCompatible = isDeviceSdkCompatible(Build.VERSION_CODES.LOLLIPOP)
+                // TODO: Test other Drawable classes to see which provide a valid clipping mask.
+                && mMaskDrawable instanceof GradientDrawable;
+
+        if (mIsOutlineCompatible) {
+            initializeOutlineLollipop();
+        } else {
+            initializeOutlineLegacy();
+        }
+    }
+
+    /**
+     * Initializes this class when using a post-Lollipop API version.
+     */
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    private void initializeOutlineLollipop() {
+        // Using ScaleType.MATRIX to match pre-Lollipop clipping.
+        setScaleType(ScaleType.MATRIX);
+        setBackground(mMaskDrawable);
+
+        setOutlineProvider(ViewOutlineProvider.BACKGROUND);
+        setClipToOutline(true);
+    }
+
+    /**
+     * Initializes this class when using a pre-Lollipop API version.
+     */
+    private void initializeOutlineLegacy() {
         mSourceOptions = new BitmapFactory.Options();
         mSourceOptions.inPreferredConfig = Bitmap.Config.ARGB_8888;
         if (isDeviceSdkCompatible(Build.VERSION_CODES.HONEYCOMB)) {
@@ -84,10 +122,6 @@ public class MaskedImageView extends ImageView {
             // Avoid issues with hardware accelerated rendering, i.e. black background showing instead of alpha.
             setLayerType(View.LAYER_TYPE_SOFTWARE, null);
         }
-
-        if (attributes != null) {
-            parseAttributes(attributes);
-        }
     }
 
     /**
@@ -100,7 +134,7 @@ public class MaskedImageView extends ImageView {
 
     /**
      * Parses the passed in {@link AttributeSet} and stores the values locally.
-     * @param attributes
+     * @param attributes {@link AttributeSet} - The attributes to parse.
      */
     private void parseAttributes(AttributeSet attributes) {
         mMaskResourceId = -1;
@@ -166,9 +200,11 @@ public class MaskedImageView extends ImageView {
         return new Rect(0, 0, mMask.getWidth(), mMask.getHeight());
     }
 
-    /** {@inheritDoc} */
-    @Override
-    protected void onDraw(Canvas canvas) {
+    /**
+     * Draws the "Outlined" or "masked" image for pre-Lollipop devices.
+     * @param canvas {@link Canvas} - The Canvas to paint on.
+     */
+    private void drawOutlineLegacy(Canvas canvas) {
         Bitmap sourceBitmap = drawableToBitmap(getDrawable());
 
         if (sourceBitmap == null || getWidth() <= 0 || getHeight() <= 0) {
@@ -200,5 +236,15 @@ public class MaskedImageView extends ImageView {
 
         // Set mask.
         canvas.drawBitmap(mMask, 0, 0, mMaskPaint);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    protected void onDraw(Canvas canvas) {
+        if (mIsOutlineCompatible) {
+            super.onDraw(canvas);
+        } else {
+            drawOutlineLegacy(canvas);
+        }
     }
 }
