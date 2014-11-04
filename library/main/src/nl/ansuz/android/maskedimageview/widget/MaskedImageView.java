@@ -156,7 +156,6 @@ public class MaskedImageView extends ImageView {
             mMask = Bitmap.createBitmap(bitmap.getWidth(), bitmap.getHeight(), Bitmap.Config.ALPHA_8);
             Canvas canvas = new Canvas(mMask);
             canvas.drawBitmap(bitmap, 0.0f, 0.0f, null);
-            bitmap.recycle();
         } else {
             // Regular Shapes are fine without the extra steps.
             mMask = drawableToBitmap(mMaskDrawable, Bitmap.Config.ALPHA_8);;
