@@ -160,9 +160,44 @@ public class MaskedImageView extends ImageView {
     }
 
     /**
+     * @param source {@link Bitmap} - Source image.
+     * @return {@link Rect} - Source image bounding rectangle based on scale type.
+     */
+    private Rect getSourceBoundRect(Bitmap source) {
+        int left = 0, top = 0, right = 0, bottom = 0;
+        ScaleType scaleType = getScaleType();
+        double sourceRatio = source.getWidth() / source.getHeight();
+        double targetRatio = mMask.getWidth() / mMask.getHeight();
+
+        switch (scaleType) {
+            case CENTER_CROP:
+                if (sourceRatio >= targetRatio) {
+                    // Make height match, offset width.
+                    bottom = source.getHeight();
+                    int rectWidth = (int) (bottom * targetRatio);
+                    left = (source.getWidth() - rectWidth) / 2;
+                    right = left + rectWidth;
+                } else {
+                    // Make width match, offset height.
+                    right = source.getWidth();
+                    int rectHeight = (int) (right / targetRatio);
+                    top = (source.getHeight() - rectHeight) / 2;
+                    bottom = top + rectHeight;
+                }
+                break;
+            default:
+                right = source.getWidth();
+                bottom = source.getHeight();
+                break;
+        }
+
+        return new Rect(left, top, right, bottom);
+    }
+
+    /**
      * @return {@link Rect} - The bounds to draw the source bitmap, based on the mask size.
      */
-    private Rect getSourceBoundRect() {
+    private Rect getDestinationBoundRect() {
         return new Rect(0, 0, mMask.getWidth(), mMask.getHeight());
     }
 
@@ -193,10 +228,11 @@ public class MaskedImageView extends ImageView {
         }
 
         // Make sure the original bitmap doesn't exceed the mask size.
-        Rect sourceBounds = getSourceBoundRect();
+        Rect srcBounds = getSourceBoundRect(sourceBitmap);
+        Rect destBounds = getDestinationBoundRect();
 
         // Paint image.
-        canvas.drawBitmap(output, sourceBounds, sourceBounds, mSourcePaint);
+        canvas.drawBitmap(output, srcBounds, destBounds, mSourcePaint);
 
         // Set mask.
         canvas.drawBitmap(mMask, 0, 0, mMaskPaint);
